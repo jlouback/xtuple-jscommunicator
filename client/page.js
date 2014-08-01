@@ -11,7 +11,7 @@ white:true*/
 	  enyo.kind({
 	    name: "XV.JscommunicatorPage",
 	    kind: "enyo.FittableRows",
-	    classes: "jscommunicator-page",
+	    classes: "jscommunicator-page"
 	  });
 	};
 
