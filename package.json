@@ -1,0 +1,15 @@
+{
+  "author": "Juliana Louback <juliana.m.louback@gmail.com>",
+  "name": "xtuple-jscommunicator",
+  "description": "xTuple JSCommunicator integration",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "peerDependencies": {
+    "xtuple": "^4.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/JLouback/xtuple-jscommunicator"
+  }
+}
