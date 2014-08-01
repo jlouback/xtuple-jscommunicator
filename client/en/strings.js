@@ -7,7 +7,8 @@ strict:true, trailing:true, white:true */
   "use strict";
 
   var lang = XT.stringsFor("en_US", {
-    "_explanation": "Explanation",
+    "_explanation": "JSCommunicator is a SIP communication tool developed in HTML and JavaScript.
+	\nPlease see http://jscommunicator.org for more details about features, examples, mailing lists and the latest source code.",
     "_jscommunicator": "JSCommunicator"
   });
 

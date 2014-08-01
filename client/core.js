@@ -8,7 +8,7 @@ white:true*/
 
 	XT.extensions.jscommunicator = {
 		setVersion: function () {
-	      XT.setVersion("0.0.1", "xtuple-jscommunicator");
+	      XT.setVersion("0.0.3", "xtuple-jscommunicator");
 	    }
 	};
 
