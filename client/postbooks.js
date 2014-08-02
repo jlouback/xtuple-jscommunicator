@@ -14,11 +14,16 @@ white:true*/
       panels: [
         {
           name: "jscommunicatorPage",
-          kind: "XV.JscommunicatorPage",
-          label: "_jscommunicator".loc()
+          label: "_jscommunicator".loc(),
           tag: "iframe",
           classes: "jscommunicator-page",
           src: "npm/xtuple-jscommunicator/client/assets/jscommunicator.html"
+        },
+        {  
+          name: "explanatoryIframe",
+          kind: "XV.JscommunicatorPage",
+          label: "_explanation".loc(),
+          classes: "jscommunicator-page"
         }
       ]
     };

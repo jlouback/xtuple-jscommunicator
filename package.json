@@ -2,7 +2,7 @@
   "author": "Juliana Louback <juliana.m.louback@gmail.com>",
   "name": "xtuple-jscommunicator",
   "description": "xTuple JSCommunicator integration",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "dependencies": {
   },
   "peerDependencies": {
