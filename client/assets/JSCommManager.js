@@ -3,6 +3,7 @@
  http://jscommunicator.org
 
  Copyright (C) 2013  Daniel Pocock http://danielpocock.com
+ Copyright (C) 2014  Juliana Louback http://julianalouback.com
 
  The JavaScript code in this page is free software: you can
  redistribute it and/or modify it under the terms of the GNU
@@ -63,6 +64,11 @@ window.JSCommManager = {
       return false;
     }
 
+    /* load internationalization options */
+    if(JSCommSettings.i18n.translate) {
+        i18n.initI18n(JSCommSettings.i18n.show_menu);
+    }
+
     this.currentURL = parseUri(window.location.toString());
     if(this.currentURL.queryKey["dial"]) {
       var with_video = JSCommSettings.dialing.auto_dial.use_video;
@@ -77,7 +83,7 @@ window.JSCommManager = {
         use_video: with_video
       };
     }
-
+ 
     // Copy the credentials from the settings into a local object
     // for use with the login form
     this.credentials = JSCommSettings.user;
@@ -325,10 +331,10 @@ window.JSCommManager = {
 
     var peer_uri = call.remote_identity.uri.toAor().toString();
     var peer_name = '<' + peer_uri + '>';
-	var peer_display = '';
+	  var peer_display = '';
     if(call.remote_identity.display_name) {
-       peer_name = call.remote_identity.display_name + ' ' + peer_name;
-	   peer_display = call.remote_identity.display_name;
+      peer_name = call.remote_identity.display_name + ' ' + peer_name;
+	    peer_display = call.remote_identity.display_name;
     }
     console.log("peer_name: " + peer_name);
 
@@ -459,15 +465,14 @@ window.JSCommManager = {
   },
  
   sendMessage : function(uri, text) {
-	try {
-		this.phone.sendMessage(uri,text);
-	} catch(e){
-		throw(e);
-		return;
-	}
+  	try {
+  		this.phone.sendMessage(uri,text);
+  	} catch(e){
+  		throw(e);
+  		return;
+  	}
   }
- 
+
 };
 
 })(jQuery);
-

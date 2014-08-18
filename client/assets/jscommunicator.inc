@@ -1,32 +1,20 @@
-<!DOCTYPE html>
-<head>
-<title>Testing</title>
-<link rel="stylesheet" href="style.css" type="text/css"/>
-<link rel="stylesheet" href="style-horizontal.css" type="text/css"/>
-<link rel="stylesheet" href="skin.css" type="text/css"/>
-<script src="jquery.js" type="text/javascript"></script>
-<script src="Arbiter.js" type="text/javascript"></script>
-<script src="jquery.i18n.properties.js" type="text/javascript"></script>
-<!-- For resizeable webcam display -->
-<script src="jquery-ui.js"></script>
-<link rel="stylesheet" href="jquery-ui.css" type="text/css"/>
-<!--<script src="http://jssip.net/download/jssip-devel.js"></script>-->
-<script src="JsSIP.js" type="text/javascript"></script>
-<script src="init.js" type="text/javascript"></script>
-<script src="config.js" type="text/javascript"></script>
 
-<!-- Each uncompressed source file loaded separately -->
-<script src="i18n.js" type="text/javascript"></script>
-<script src="JSCommManager.js" type="text/javascript"></script>
-<script src="JSCommUI.js" type="text/javascript"></script>
-<script src="webrtc-check.js" type="text/javascript"></script>
-<script src="jssip-helper.js" type="text/javascript"></script>
-<script src="parseuri.js" type="text/javascript"></script>
+<!-- To use JSCommunicator, you can either cut and paste
+     this entire HTML fragment into an existing HTML page
+     or copy it into a CMS or other publishing framework.
 
-<!--font-->
-<link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
-</head>
-<body>
+     If using a static HTML page, simply copy the <script>
+     definitions from the file phone.shtml into your own page
+     <head> section.
+
+     If using a CMS or some other framework, you will need to
+     copy the <script> references from phone.shtml into the
+     file or script used to generate the page header.
+     You may also be able to tell the CMS about the JavaScript
+     <script> references through its management console.
+     Alternatively, if you are unable to modify the CMS generated <head>,
+     it is completely valid to include the <script> elements in the
+     HTML body where you include the HTML fragement from this file -->
 
 <div id="encapsulate">
     <div id="header">
@@ -187,5 +175,3 @@
 </div>
 
 
-</body>
-</html>

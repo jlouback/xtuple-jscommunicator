@@ -3,6 +3,7 @@
  http://jscommunicator.org
 
  Copyright (C) 2013  Daniel Pocock http://danielpocock.com
+ Copyright (C) 2014  Juliana Louback http://julianalouback.com
 
  The JavaScript code in this page is free software: you can
  redistribute it and/or modify it under the terms of the GNU
@@ -16,7 +17,37 @@
  that code without the full copy of the GNU GPL normally required
  provided you include this license notice and a URL
  through which recipients can access the Corresponding Source.
-****************************************************************************/
+
+ Portions of this file adapted from JsSIP, http://jssip.net
+
+ Copyright © 2012-2013 José Luis Millán – Versatica <http://www.versatica.com>
+
+ JsSIP code was originally distributed under the following terms:
+
+MIT License 
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+“Software”), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The original MIT License text can be found at opensource.org.
+
+*****************************************************************************/
 
 (function($) {
 
@@ -40,7 +71,7 @@ window.JSCommUI = {
     console.log("starting init");
 
     // Hide the message "This service requires JavaScript"
-    $("#network-controls #error #js").hide();
+    $("#error #js").hide();
  
  
 
@@ -109,10 +140,11 @@ window.JSCommUI = {
     });
 
     $("#session-hangup").click(function() {
+      $("#dtmf-pad").hide();
       JSCommManager.hangup_call();
     });
 
-    $("#dtmf-pad input:button").click(function() {
+    $("#dtmf-pad input:button").mousedown(function() {
       var dtmf_char = $(this).val();
       JSCommUI.send_dtmf(dtmf_char);
     });
@@ -128,85 +160,133 @@ window.JSCommUI = {
     $("#video-control-fullscreen").click(function() {
       JSCommUI.video_fullscreen(true);
     });
+
+    $("#dtmf-button").click(function() {
+      $("#dtmf-pad").toggle();
+    });
  
 	$("#chat-address").focus(function() {
 		$(this).val("");
-		$("#chat-error #no-contact").hide();
+		$("#chat-contact-error").hide();
 	});
+
+  $("#address").focus(function() {
+    $(this).val("");
+    $("#call-contact-error").hide();
+  });
  
 	$("#start-chat").click(function () {
-		var address = $("#chat-address").val();
-		if(address!="Enter contact" && address) {
-			JSCommUI.createChatSession(address, "");
+		var destination = $("#chat-address").val();
+		if(destination!="Enter contact" && destination) {
+      session = JSCommUI.getSession(destination, destination);
+      if (!session) {
+        JSCommUI.createChatSession(destination, destination);
+      }
 		} else {
-			$("#chat-error #no-contact").show();
+			$("#chat-contact-error").show();
 		}
 	});
  
     if(!JSCommSettings.registration.user_control) {
-      $("#reg #control").hide();
+      $("#reg #control").text("");
     }
 
     this.init_done = true;
   },
 
   show_login : function() {
-    $("#jsc-login-display-name-field").val(JSCommManager.credentials.display_name);
-    if(JSCommManager.credentials.uri.length > 4) {
-       // strip off the "sip:" URI prefix, it is not shown in the login form
-       $("#jsc-login-sip-address-field").val(JSCommManager.credentials.uri.substr(4));
+    $("#welcome").hide();
+    $("#welcome_name").hide();
+    $("#communicator").hide();
+    $("#jsc-logout-button").hide();
+    if(JSCommManager.credentials.uri) {
+        $("#jsc-login-display-name-field").val(JSCommManager.credentials.display_name);
+        if(JSCommManager.credentials.uri.length > 4) {
+            // strip off the "sip:" URI prefix, it is not shown in the login form
+            $("#jsc-login-sip-address-field").val(JSCommManager.credentials.uri.substr(4));
+        }
     }
-    $("#jsc-login-password-field").val(JSCommManager.credentials.sip_auth_password);
+    else {
+        if(this.get_cookie("displayName")) {
+            $("#jsc-login-display-name-field").val(this.get_cookie("displayName"));
+            $("#jsc-login-sip-address-field").val(this.get_cookie("sipAddress"));
+        }
+    }
+    $("#jsc-login-password-field").val("");
     $("#jsc-login").show();
     $("#jsc-login-button").click(JSCommUI.do_login);
-    $("#tabs").hide();
   },
 
   do_login : function() {
     $("#jsc-login").hide();
-    $("#tabs").show();
-    JSCommUI.load_tabs();
+    $("#communicator").show();
+    if(!JSCommSettings.session.enable_chat) {
+      $("#chat").hide();
+    }
     JSCommManager.credentials.display_name = $("#jsc-login-display-name-field").val();
     JSCommManager.credentials.uri = 'sip:' + $("#jsc-login-sip-address-field").val();
     JSCommManager.credentials.sip_auth_password = $("#jsc-login-password-field").val();
+    if(JSCommManager.credentials.display_name) {
+      var name = JSCommManager.credentials.display_name
+    } else {
+      name = JSCommUI.get_name(JSCommManager.credentials.uri);
+    }
+    $("#welcome").show();
+    $("#welcome_name").show();
+    $("#welcome_name").text(" " + name);
     JSCommManager.start_ua();
+    $("#jsc-logout-button").show();
+    $("#jsc-logout-button").click(JSCommUI.do_logout);
+    if($("#rememberMe").prop("checked")) {
+        document.cookie = "displayName=".concat($("#jsc-login-display-name-field").val());
+        document.cookie = "sipAddress=".concat($("#jsc-login-sip-address-field").val());
+    }
+  },
+ 
+  do_logout : function() {
+    $("#reg").hide();
+    // Clear any error from earlier failure:
+    $("#error #reg-fail").hide();
+    JSCommUI.show_login();
   },
 
   show_error : function(err_name) {
 
     // Hide the message "This service requires JavaScript"
-    $("#network-controls #error #js").hide();
+    $("#error #js").hide();
 
-    $("#network-controls #error #" + err_name).show();
+    $("#error #" + err_name).show();
   },
 
   show_error_tmp : function(err_name) {
 
     // Hide the message "This service requires JavaScript"
-    $("#network-controls #error #js").hide();
+    $("#error #js").hide();
 
-    $("#network-controls #error #" + err_name).show();
-    $("#network-controls #error #" + err_name).fadeTo(5000, 1, function() {
+    $("#error #" + err_name).show();
+    $("#error #" + err_name).fadeTo(5000, 1, function() {
       $(this).hide();
     });
   },
 
   set_link_state : function(connected) {
-    $("#network-controls #ws").show();
-    $("#network-controls #ws .state").hide();
+    $("#encapsulate #ws").show();
+    $("#encapsulate #ws .state").hide();
     if(connected) {
       $(".ws-disconnected").hide();
-      $("#network-controls #ws #connected").show();
+      $("#encapsulate #ws #connected").show();
       //re-enables phone 
       $("#dest :input").prop('disabled', false);
       $("#dialing-actions :input").prop('disabled', false);
+      $("#new-chat :input").prop('disabled', false);
     } else {
       $(".ws-connected").hide();
-      $("#network-controls #ws #disconnected").show();
-      //keep phone visible but disabled.
+      $("#encapsulate #ws #disconnected").show();
+      //keep phone and chat visible but disabled.
       $("#dial-controls").show();
-	  $("#dialing-actions :input").prop('disabled', true);
+	    $("#dialing-actions :input").prop('disabled', true);
       $("#dest :input").prop('disabled', true);
+      $("#new-chat :input").prop('disabled', true);
     }
   },
 
@@ -218,6 +298,8 @@ window.JSCommUI = {
     }
     if(JSCommSettings.dialing.video_dialing) {
       $("#dialing-actions #call-video").show();
+      $("#video-session").draggable();
+      $("#video-session").resizable();
     }
     $("#dest #address").focus();
   },
@@ -226,8 +308,10 @@ window.JSCommUI = {
     var destination_address = $("#address").val();
     if(destination_address.length < 1) {
       console.log("no destination specified, can't make call");
+      $("#call-contact-error").show();
       return;
     }
+    $("#call-contact-error").hide();
     JSCommManager.make_call(destination_address, with_video);
   },
 
@@ -240,9 +324,9 @@ window.JSCommUI = {
     // ICE negotiation happens too slowly.
     clearInterval(JSCommUI.soundLoop);
     soundPlayer.pause();
-    $("#session-controls #state span").hide();
-    $("#session-controls #state .session-accepted").show();
-    $("#session-actions input:button").hide();
+    $("#call-info #state span").hide();
+    $("#call-info #state .session-accepted").show();
+    $("#session-actions button").hide();
 
     JSCommManager.answer_call(with_video);
   },
@@ -256,7 +340,9 @@ window.JSCommUI = {
   },
 
   incoming_dtmf : function(dtmf_char) {
-    this.play_dtmf_sound(dtmf_char);
+    if(JSCommSettings.session.dialpad_tone) {
+        this.play_dtmf_sound(dtmf_char);
+    }
   },
 
   link_up : function() {
@@ -270,22 +356,23 @@ window.JSCommUI = {
 
   registration_up : function() {
     // Clear any error from earlier failure:
-    $("#network-controls #error #reg-fail").hide();
+    $("#error #reg-fail").hide();
 
-    $("#network-controls #reg .down").hide();
-    $("#network-controls #reg .up").show();
-    $("#network-controls #reg").show();
+    $("#encapsulate #reg .down").hide();
+    $("#encapsulate #reg .up").show();
+    $("#encapsulate #reg").show();
   },
 
   registration_down : function() {
-    $("#network-controls #reg .up").hide();
-    $("#network-controls #reg .down").show();
-    $("#network-controls #reg").show();
+    $("#encapsulate #reg .up").hide();
+    $("#encapsulate #reg .down").show();
+    $("#encapsulate #reg").show();
   },
 
   registration_failure : function() {
-    $("#network-controls #error #reg-fail").show();
-    $("#network-controls #reg").show();
+    $("#reg .up").hide();
+    $("#error #reg-fail").show();
+    $("#encapsulate #reg").show();
   },
 
   play_again : function() {
@@ -295,21 +382,26 @@ window.JSCommUI = {
   session_start : function(status, peer_name, peer_display, peer_uri, with_video) {
     $("#dial-controls").hide();
     $(".session-active").hide();
-    $("#session-controls #state span").hide();
+    $("#call-info #state span").hide();
     $("#session-controls #peer").empty();
     $("#session-controls #peer").text(peer_name);
-    $("#session-actions input:button").hide();
-    JSCommUI.createChatSession(peer_display, peer_uri);
+    $("#session-actions button").hide();
+    if(JSCommSettings.session.enable_chat) {
+      session = JSCommUI.getSession(peer_uri, peer_display);
+      if (!session) {
+        JSCommUI.createChatSession(peer_display, peer_uri);
+      }   
+    }
     if(status == 'incoming') {
-      $("#session-controls #state .session-incoming").show();
-      $("#session-actions input.session-incoming:button").show();
+      $("#call-info #state .session-incoming").show();
+      $("#session-actions .session-incoming").show();
       soundPlayer.setAttribute("src", this.get_sound_url("incoming-call2"));
       soundPlayer.play();
       clearInterval(JSCommUI.soundLoop);
       JSCommUI.soundLoop = setInterval(JSCommUI.play_again, 3000);
     } else if(status == 'trying') {
-      $("#session-controls #state .session-outgoing").show();
-      $("#session-actions input.session-outgoing:button").show();
+      $("#call-info #state .session-outgoing").show();
+      $("#session-actions .session-outgoing").show();
     } else {
       console.log("Unexpected status: " + status);
     }
@@ -327,8 +419,8 @@ window.JSCommUI = {
     if(!cause) {
       this.show_error_tmp('call-attempt-failed');
     } else {
-      $("#network-controls #error #dynamic").empty();
-      $("#network-controls #error #dynamic").append(cause);
+      $("#error #dynamic").empty();
+      $("#error #dynamic").append(cause);
       this.show_error_tmp('dynamic');
     }
     soundPlayer.setAttribute("src", this.get_sound_url("outgoing-call-rejected"));
@@ -341,6 +433,10 @@ window.JSCommUI = {
     soundPlayer.pause();
     $("#session-controls").hide();
     $('#video-session').hide();
+    $("#call-info #state span").hide();
+    if(JSCommSettings.dialing.clear_dialbox) {
+        $("#address").val("");
+    }
     JSCommUI.ready_to_dial();
   },
 
@@ -357,15 +453,15 @@ window.JSCommUI = {
   session_connect : function(call, e) {
     clearInterval(JSCommUI.soundLoop);
     soundPlayer.pause();
-    $("#session-controls #state span").hide();
-    $("#session-controls .session-active").show();
+    $("#call-info #state span").hide();
+    $(".session-active").show();
     if(JSCommSettings.session.show_dtmf_pad) {
       $("#session-controls #dtmf-pad").show();
     } else {
       $("#session-controls #dtmf-pad").hide();
     }
-    $("#session-actions input:button").hide();
-    $("#session-actions input.session-active:button").show();
+    $("#session-actions button").hide();
+    $(".session-active").show();
 
     var local_stream_count = call.getLocalStreams().length;
     var remote_stream_count = call.getRemoteStreams().length;
@@ -403,8 +499,10 @@ window.JSCommUI = {
     console.log("DTMF press: " + dtmf_char);
     JSCommManager.send_dtmf(dtmf_char);
     // Local sound effects:
-    this.play_dtmf_sound(dtmf_char);
-  },
+    if(JSCommSettings.session.dialpad_tone) {
+        this.play_dtmf_sound(dtmf_char);
+    }
+ },
 
   self_view : function(see_self) {
     $("#video-controls input.self:button").hide();
@@ -450,47 +548,69 @@ window.JSCommUI = {
 	$("#chat-error #no-contact").hide();
     $("#tab-1").show();
     $(".tab-label").click(function() {
-       JSCommUI.change_tab($(this).attr("id"),$(this).attr("value"));
+       JSCommUI.change_tab($(this).attr("id"));
     });
   },
  
-  change_tab : function(label, tab) {
-    $(".tab-page").hide();
+  change_tab : function(label) {
+    $(".chatSession").hide();
     $(".active-tab").removeClass("active-tab");
-    $(".tab-page").hide();
+    var number = label.substring(5);
+    var tab = "#tab";
+    tab = tab.concat(number);
     $(tab).show();
     label = '#' + label;
     $(label).addClass("active-tab");
-    $("#chat-address").val("Enter contact");
+    $(label).css("font-weight", "normal");
   },
  
  //adapted from try.jssip.net
  createChatSession : function(display_name, uri) {
+   var number = $(".chatSession").length;
+   if(number > 5) {
+      return;
+   }
+   if(!display_name) {
+    display_name = JSCommUI.get_name(uri);
+   }
+   $(".chatSession").hide();
+   $(".tab-label").removeClass("active-tab");
+   var label_div = $('<li class="tab-label active-tab" id="label-'+number+'">'+ display_name +'</li>');
 	 var session_div = $('\
-	 <div class="chatSession"> \
-		<div class="close">x</div> \
+	 <div class="chatSession" id="tab-'+ number +'"> \
+		<div class="close" value="'+ number +'">x</div> \
 	    <div class="peer"> \
-			<span class="display-name">' + display_name + '</span> \
-			<span>&lt;</span><span class="uri">' + uri + '</span><span>&gt;</span> \
+      <span class="display-name">' + display_name + '</span> \
+			<span>&lt;</span><span class="uri" style="font-weight:bold;">' + uri + '</span><span>&gt;</span> \
 		</div> \
 		<div class="chat"> \
 			<div class="chatting"></div> \
-			<input class="inactive" type="text" name="chat-input" value="type to chat..."/>\
+			<input class="inactive" type="text" name="chat-input" placeholder="type to chat..."/>\
 			<div class="iscomposing"></div> \
 		</div> \
 	 </div> \
 	 ');
-	 if(!uri) {
-		uri = display_name;
-	 }
-	 $("#tab-2").append(session_div);
-	 
-	 var session = $("#tab-2 .chatSession").filter(":last");
+   $("#tab-labels").append(label_div);
+	 $("#tab-pages").append(session_div);
+   i18n.loadBundles($("#lang_selection").val());
+   var label = "#label-".concat(number);
+   var tab = "#tab-".concat(number);
+   var session = $("#tab-pages .chatSession").filter(":last");
 	 var close = $(session).find("> .close");
 	 var chat_input = $(session).find(".chat > input[type='text']");
+
+   $(label).click(function() {
+       JSCommUI.change_tab($(this).attr('id'));
+    });
 	
 	 close.click(function() {
-		JSCommUI.removeSession(session);
+		$(tab).remove();
+    $(label).remove();
+    var number = $(".chatSession").length;
+    if(number > 0) {
+      var existingLabel = $("#tab-labels .tab-label").filter(":last");
+      JSCommUI.change_tab($(existingLabel).attr("id"));
+    }
 	 });
 	 
 	 chat_input.focus(function(e) {
@@ -535,16 +655,13 @@ window.JSCommUI = {
 	 // Return the jQuery object for the created session div.
 	 return session;
  },
- 
- removeSession : function(session) {
-	$(session).remove();
- },
- 
+
  addChatMessage : function(session, who, text) {
 	 var chatting = $(session).find(".chat > .chatting");
 	 $(chatting).removeClass("inactive");
+   name = JSCommUI.get_name(JSCommManager.credentials.uri);
 	 if (who != "error") {
-		var who_text = ( who == "me" ? "me" : $(session).find(".peer > .display-name").text() );
+		var who_text = ( who == "me" ? name : $(session).find(".peer > .display-name").text() );
 		var message_div = $('<p class="' + who + '"><b>' + who_text + '</b>: ' + text + '</p>');
 	 }
 	 // ERROR sending the MESSAGE.
@@ -570,16 +687,43 @@ window.JSCommUI = {
 		if (!session) {
 			session = JSCommUI.createChatSession(display_name, uri);
 		}
+    JSCommUI.message_alert(session);
 		$(session).find(".peer > .display-name").text(display_name);
 		$(session).find(".peer > .uri").text(uri);
 		JSCommUI.addChatMessage(session, "peer", text);
 		$(session).find(".chat input").focus();
 	}
  },
+
+  //flash chat tab when new message arrives
+  message_alert : function(session) {
+    if(JSCommSettings.session.message_tone) {
+      this.play_message_sound();
+    }
+    var number = $(session).attr('id').substring(4);
+    var label = "#label-";
+    label = label.concat(number);
+    if(!$(label).hasClass('active-tab')) {
+      for(i=0;i<3;i++) {
+        $(label).fadeTo('', 0.5).fadeTo('', 1.0);
+      }
+      $(label).css("font-weight", "bold");
+    }
+  },
+
+  play_message_sound : function() {
+    var sound_name = "new_message";
+    console.log("Playing sound: " + sound_name);
+    soundPlayer.setAttribute("src", this.get_sound_url(sound_name));
+    soundPlayer.play();
+  },
  
  getSession : function(uri, display_name) {
+  if(!display_name) {
+    display_name = JSCommUI.get_name(uri);
+   }
 	var session_found = null;
-	$("#tab-2 > .chatSession").each(function(i, session) {
+	$("#tab-pages > .chatSession").each(function(i, session) {
 		if (uri == $(this).find(".peer > .uri").text()) {
 			session_found = session;
 		} else if (display_name == $(this).find(".peer > .display-name").text()) {
@@ -598,6 +742,23 @@ window.JSCommUI = {
 
  
  /* End of adapted from try.jssip.net */
+
+  get_cookie : function(cookiename) {
+     var name = cookiename + "=";
+     var allcookies = document.cookie.split(';');
+     for(var i=0; i<allcookies.length; i++) {
+     var c = allcookies[i].trim();
+         if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+     }
+     return "";
+  },
+
+  //Create a name from SIP uri - useful when display name is absent
+  get_name : function(uri) {
+      var full_uri = uri.split(/:|@/);
+      var name = full_uri[1];
+      return name;
+  }
 
 };
 
